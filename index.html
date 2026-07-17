@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AndroCode ⚡ IDE Móvil con IA</title>
+    
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome para Iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CodeMirror CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/material-ocean.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <button id="toggle-sidebar-btn" class="icon-btn" title="Explorador de Archivos">
+                    <i class="fa-solid fa-folder-open"></i>
+                </button>
+                <div class="logo">
+                    <span class="logo-accent">Andro</span>Code <span class="neon-dot">⚡</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="run-btn" class="action-btn run-btn" title="Ejecutar Proyecto">
+                    <i class="fa-solid fa-play"></i> <span>Ejecutar</span>
+                </button>
+                <button id="export-btn" class="icon-btn" title="Exportar Proyecto (.zip)">
+                    <i class="fa-solid fa-file-export"></i>
+                </button>
+                <button id="reset-btn" class="icon-btn danger" title="Restaurar Proyecto por Defecto">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Layout Splitter -->
+        <div class="main-layout">
+            <!-- Sidebar (File Explorer) -->
+            <aside class="sidebar collapsed" id="sidebar">
+                <div class="sidebar-header">
+                    <h3>Archivos</h3>
+                    <div class="file-actions">
+                        <button id="new-file-btn" class="icon-btn-sm" title="Nuevo Archivo">
+                            <i class="fa-solid fa-file-plus"></i> + <i class="fa-solid fa-file"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="file-tree" id="file-tree">
+                    <!-- Dinámico -->
+                </div>
+                <div class="sidebar-footer">
+                    <div class="api-status">
+                        <i class="fa-solid fa-circle-check neon-green-text"></i>
+                        <span>IA Rotativa Lista</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Workspace: Editor, Preview & AI Panels -->
+            <main class="workspace-container">
+                <!-- Mobile Navigation Tabs (Solo visible en móviles) -->
+                <nav class="mobile-tabs">
+                    <button class="tab-nav-btn active" data-target="editor-panel">
+                        <i class="fa-solid fa-code"></i> Editor
+                    </button>
+                    <button class="tab-nav-btn" data-target="preview-panel">
+                        <i class="fa-solid fa-laptop-code"></i> Vista Previa
+                    </button>
+                    <button class="tab-nav-btn" data-target="ai-panel">
+                        <i class="fa-solid fa-robot"></i> Asistente
+                    </button>
+                </nav>
+
+                <div class="panels-wrapper">
+                    <!-- Editor Panel -->
+                    <section class="panel-section active" id="editor-panel">
+                        <div class="panel-header">
+                            <div class="open-tabs" id="open-tabs">
+                                <!-- Dinámico -->
+                            </div>
+                        </div>
+                        <div class="editor-workspace">
+                            <!-- CodeMirror Editor Container -->
+                            <div id="editor-container"></div>
+                            
+                            <!-- Mobile Helper Keyboard Bar -->
+                            <div class="mobile-keyboard-bar" id="keyboard-bar">
+                                <button class="key-btn" data-val="{">{</button>
+                                <button class="key-btn" data-val="}">}</button>
+                                <button class="key-btn" data-val="[">[</button>
+                                <button class="key-btn" data-val="]">]</button>
+                                <button class="key-btn" data-val="(">(</button>
+                                <button class="key-btn" data-val=")">)</button>
+                                <button class="key-btn" data-val=";">;</button>
+                                <button class="key-btn" data-val="=">=</button>
+                                <button class="key-btn" data-val="<">&lt;</button>
+                                <button class="key-btn" data-val=">">&gt;</button>
+                                <button class="key-btn" data-val="/">/</button>
+                                <button class="key-btn" data-val='"'>&quot;</button>
+                                <button class="key-btn" data-val="'">'</button>
+                                <button class="key-btn" data-val="Tab">Tab</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Preview Panel -->
+                    <section class="panel-section" id="preview-panel">
+                        <div class="panel-header">
+                            <h3><i class="fa-solid fa-display"></i> Pantalla de Ejecución</h3>
+                            <div class="preview-actions">
+                                <button id="reload-preview-btn" class="icon-btn-sm" title="Recargar Vista Previa">
+                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="preview-content">
+                            <div class="preview-viewport">
+                                <!-- Iframe para Web Apps -->
+                                <iframe id="web-preview" title="Web Preview"></iframe>
+                                
+                                <!-- Consola/Terminal Simulada para Python/Otros -->
+                                <div id="terminal-preview" class="terminal-view hidden">
+                                    <div class="terminal-header">
+                                        <span>androcode_terminal@system</span>
+                                    </div>
+                                    <div class="terminal-body" id="terminal-body">
+                                        <div class="terminal-line system-line">> Esperando ejecución...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- AI Assistant Panel -->
+                    <section class="panel-section" id="ai-panel">
+                        <div class="panel-header">
+                            <h3><i class="fa-solid fa-brain neon-purple-text"></i> Asistente de Código</h3>
+                            <span class="ai-model-badge">Gemini Flash</span>
+                        </div>
+                        <div class="ai-container">
+                            <div class="chat-messages" id="chat-messages">
+                                <div class="chat-msg assistant">
+                                    <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+                                    <div class="msg-bubble">
+                                        ¡Hola! Soy tu asistente de **AndroCode**. Puedo ayudarte a escribir código, corregir errores, o explicarte cómo funciona tu proyecto. 
+                                        <br><br>
+                                        Prueba los accesos rápidos de abajo o escríbeme lo que necesites.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- AI Suggestions -->
+                            <div class="ai-suggestions">
+                                <button class="suggestion-chip" data-prompt="Revisa mi archivo actual en busca de errores y explícalos.">
+                                    <i class="fa-solid fa-bug"></i> Buscar errores
+                                </button>
+                                <button class="suggestion-chip" data-prompt="Explica de forma detallada cómo funciona el código de mi archivo actual.">
+                                    <i class="fa-solid fa-compass"></i> Explicar código
+                                </button>
+                                <button class="suggestion-chip" data-prompt="Optimiza este código para hacerlo más limpio y rápido.">
+                                    <i class="fa-solid fa-bolt"></i> Optimizar
+                                </button>
+                            </div>
+
+                            <!-- Chat Input -->
+                            <div class="chat-input-wrapper">
+                                <textarea id="chat-input" placeholder="Pregúntale al asistente... (Ej: ¿Cómo centro un div?)"></textarea>
+                                <button id="send-chat-btn" class="icon-btn primary" title="Enviar Mensaje">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- JS Libraries (CodeMirror & Zip utility) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/markdown/markdown.min.js"></script>
+    
+    <!-- JSZip CDN para descargar proyectos en ZIP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <!-- Marked.js para formatear respuestas markdown de Gemini en el chat -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- Custom Logic -->
+    <script src="gemini.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
