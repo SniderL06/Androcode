@@ -30,37 +30,34 @@
                 <div class="logo">
                     <span class="logo-accent">Andro</span>Code <span class="neon-dot">⚡</span>
                 </div>
-                <div class="project-select-container">
-                    <select id="project-selector" title="Seleccionar Proyecto">
-                        <!-- Dinámico -->
-                    </select>
-                    <button id="new-project-btn" class="icon-btn-sm-header" title="Nuevo Proyecto">
-                        <i class="fa-solid fa-circle-plus"></i> <span>+ Proyecto</span>
-                    </button>
-                </div>
             </div>
             <div class="header-actions">
                 <button id="run-btn" class="action-btn run-btn" title="Ejecutar Proyecto">
                     <i class="fa-solid fa-play"></i> <span>Ejecutar</span>
-                </button>
-                <button id="export-btn" class="icon-btn" title="Exportar Proyecto (.zip)">
-                    <i class="fa-solid fa-file-export"></i>
-                </button>
-                <button id="reset-btn" class="icon-btn danger" title="Restaurar Proyecto por Defecto">
-                    <i class="fa-solid fa-rotate-left"></i>
                 </button>
             </div>
         </header>
 
         <!-- Main Layout Splitter -->
         <div class="main-layout">
-            <!-- Sidebar (File Explorer) -->
+            <!-- Sidebar (File Explorer & Project Manager) -->
             <aside class="sidebar collapsed" id="sidebar">
+                <!-- Gestión de Proyecto Activo -->
+                <div class="sidebar-project-section">
+                    <label class="section-label">Proyecto Activo</label>
+                    <select id="project-selector" title="Seleccionar Proyecto">
+                        <!-- Dinámico -->
+                    </select>
+                    <button id="new-project-btn" class="sidebar-btn success" title="Nuevo Proyecto">
+                        <i class="fa-solid fa-circle-plus"></i> Nuevo Proyecto
+                    </button>
+                </div>
+
                 <div class="sidebar-header">
                     <h3>Archivos</h3>
                     <div class="file-actions">
                         <button id="new-file-btn" class="icon-btn-sm" title="Nuevo Archivo">
-                            <i class="fa-solid fa-file-plus"></i> + <i class="fa-solid fa-file"></i>
+                            + <i class="fa-solid fa-file"></i>
                         </button>
                     </div>
                 </div>
@@ -68,6 +65,12 @@
                     <!-- Dinámico -->
                 </div>
                 <div class="sidebar-footer">
+                    <button id="export-btn" class="sidebar-action-btn" title="Exportar Proyecto (.zip)">
+                        <i class="fa-solid fa-file-export"></i> <span>Exportar ZIP</span>
+                    </button>
+                    <button id="reset-btn" class="sidebar-action-btn danger" title="Eliminar Proyecto">
+                        <i class="fa-solid fa-trash-can"></i> <span>Eliminar Proyecto</span>
+                    </button>
                     <div class="api-status">
                         <i class="fa-solid fa-circle-check neon-green-text"></i>
                         <span>IA Rotativa Lista</span>

@@ -813,27 +813,35 @@ body {
     text-shadow: 0 0 6px var(--glow-purple);
 }
 
-/* Project Selection UI (Header) */
-.project-select-container {
+/* Sidebar Project Selector & Controls */
+.sidebar-project-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 8px;
-    margin-left: 16px;
-    border-left: 1px solid var(--border-color);
-    padding-left: 16px;
+}
+
+.section-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    font-weight: 700;
 }
 
 #project-selector {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     color: var(--text-main);
-    padding: 6px 12px;
+    padding: 8px 12px;
     border-radius: var(--radius-md);
     outline: none;
     font-weight: 500;
     cursor: pointer;
     font-size: 0.9rem;
     transition: var(--transition-fast);
+    width: 100%;
 }
 
 #project-selector:focus {
@@ -841,38 +849,71 @@ body {
     box-shadow: 0 0 6px var(--glow-blue);
 }
 
-.icon-btn-sm-header {
-    background: rgba(80, 250, 123, 0.15);
-    border: 1px solid rgba(80, 250, 123, 0.3);
-    color: var(--accent-green);
-    padding: 6px 12px;
+.sidebar-btn {
+    background: transparent;
+    border: 1px dashed var(--border-color);
+    color: var(--text-muted);
+    padding: 8px;
     border-radius: var(--radius-md);
     font-weight: 600;
     font-size: 0.85rem;
     cursor: pointer;
     display: flex;
+    justify-content: center;
     align-items: center;
     gap: 6px;
     transition: var(--transition-fast);
+    width: 100%;
 }
 
-.icon-btn-sm-header:hover {
-    background: var(--accent-green);
-    color: var(--text-inverse);
-    box-shadow: 0 0 10px var(--glow-green);
+.sidebar-btn:hover {
+    color: var(--text-main);
+    border-color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.02);
 }
 
-@media (max-width: 600px) {
-    .project-select-container {
-        margin-left: 8px;
-        padding-left: 8px;
-    }
-    .icon-btn-sm-header span {
-        display: none;
-    }
-    #project-selector {
-        max-width: 110px;
-    }
+.sidebar-btn.success {
+    border-color: rgba(80, 250, 123, 0.3);
+    color: var(--accent-green);
+}
+
+.sidebar-btn.success:hover {
+    background: rgba(80, 250, 123, 0.1);
+    border-color: var(--accent-green);
+}
+
+/* Sidebar Footer Buttons (ZIP & Delete) */
+.sidebar-action-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 10px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition-fast);
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.sidebar-action-btn:hover {
+    background: var(--border-color);
+    border-color: var(--text-muted);
+}
+
+.sidebar-action-btn.danger {
+    color: var(--accent-red);
+    border-color: rgba(255, 85, 85, 0.3);
+}
+
+.sidebar-action-btn.danger:hover {
+    background: rgba(255, 85, 85, 0.1);
+    border-color: var(--accent-red);
 }
 
 /* Custom Modal Design */
