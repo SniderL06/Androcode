@@ -30,6 +30,14 @@
                 <div class="logo">
                     <span class="logo-accent">Andro</span>Code <span class="neon-dot">⚡</span>
                 </div>
+                <div class="project-select-container">
+                    <select id="project-selector" title="Seleccionar Proyecto">
+                        <!-- Dinámico -->
+                    </select>
+                    <button id="new-project-btn" class="icon-btn-sm-header" title="Nuevo Proyecto">
+                        <i class="fa-solid fa-circle-plus"></i> <span>+ Proyecto</span>
+                    </button>
+                </div>
             </div>
             <div class="header-actions">
                 <button id="run-btn" class="action-btn run-btn" title="Ejecutar Proyecto">
@@ -91,10 +99,7 @@
                             </div>
                         </div>
                         <div class="editor-workspace">
-                            <!-- CodeMirror Editor Container -->
-                            <div id="editor-container"></div>
-                            
-                            <!-- Mobile Helper Keyboard Bar -->
+                            <!-- Mobile Helper Keyboard Bar (Ahora arriba del editor) -->
                             <div class="mobile-keyboard-bar" id="keyboard-bar">
                                 <button class="key-btn" data-val="{">{</button>
                                 <button class="key-btn" data-val="}">}</button>
@@ -111,6 +116,9 @@
                                 <button class="key-btn" data-val="'">'</button>
                                 <button class="key-btn" data-val="Tab">Tab</button>
                             </div>
+
+                            <!-- CodeMirror Editor Container -->
+                            <div id="editor-container"></div>
                         </div>
                     </section>
 
@@ -149,17 +157,14 @@
                             <span class="ai-model-badge">Gemini Flash</span>
                         </div>
                         <div class="ai-container">
-                            <div class="chat-messages" id="chat-messages">
-                                <div class="chat-msg assistant">
-                                    <div class="avatar"><i class="fa-solid fa-robot"></i></div>
-                                    <div class="msg-bubble">
-                                        ¡Hola! Soy tu asistente de **AndroCode**. Puedo ayudarte a escribir código, corregir errores, o explicarte cómo funciona tu proyecto. 
-                                        <br><br>
-                                        Prueba los accesos rápidos de abajo o escríbeme lo que necesites.
-                                    </div>
-                                </div>
+                            <!-- Chat Input (Ahora arriba para evitar el teclado móvil) -->
+                            <div class="chat-input-wrapper">
+                                <textarea id="chat-input" placeholder="Pregúntale al asistente... (Ej: ¿Cómo centro un div?)"></textarea>
+                                <button id="send-chat-btn" class="icon-btn primary" title="Enviar Mensaje">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
                             </div>
-                            
+
                             <!-- AI Suggestions -->
                             <div class="ai-suggestions">
                                 <button class="suggestion-chip" data-prompt="Revisa mi archivo actual en busca de errores y explícalos.">
@@ -173,12 +178,16 @@
                                 </button>
                             </div>
 
-                            <!-- Chat Input -->
-                            <div class="chat-input-wrapper">
-                                <textarea id="chat-input" placeholder="Pregúntale al asistente... (Ej: ¿Cómo centro un div?)"></textarea>
-                                <button id="send-chat-btn" class="icon-btn primary" title="Enviar Mensaje">
-                                    <i class="fa-solid fa-paper-plane"></i>
-                                </button>
+                            <!-- Chat Messages (Abajo del input) -->
+                            <div class="chat-messages" id="chat-messages">
+                                <div class="chat-msg assistant">
+                                    <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+                                    <div class="msg-bubble">
+                                        ¡Hola! Soy tu asistente de **AndroCode**. Puedo ayudarte a escribir código, corregir errores, o explicarte cómo funciona tu proyecto. 
+                                        <br><br>
+                                        Prueba los accesos rápidos de abajo o escríbeme lo que necesites.
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -202,6 +211,55 @@
     
     <!-- Marked.js para formatear respuestas markdown de Gemini en el chat -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- Modal para Nuevo Proyecto -->
+    <div id="new-project-modal" class="modal-overlay hidden">
+        <div class="modal-card animate-zoom">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-folder-plus neon-purple-text"></i> Nuevo Proyecto</h3>
+                <button id="close-project-modal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="project-name-input">Nombre del Proyecto</label>
+                    <input type="text" id="project-name-input" placeholder="Ej: Mi App Android, Servidor Web..." autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Selecciona una Plantilla</label>
+                    <div class="template-selector">
+                        <label class="template-option">
+                            <input type="radio" name="project-template" value="web" checked>
+                            <div class="option-card">
+                                <i class="fa-brands fa-html5 font-lg web-color"></i>
+                                <span class="option-title">Desarrollo Web</span>
+                                <span class="option-desc">HTML, CSS y JS con vista previa en vivo.</span>
+                            </div>
+                        </label>
+                        <label class="template-option">
+                            <input type="radio" name="project-template" value="python">
+                            <div class="option-card">
+                                <i class="fa-brands fa-python font-lg python-color"></i>
+                                <span class="option-title">Python Script</span>
+                                <span class="option-desc">Ejecución en consola de comandos virtual.</span>
+                            </div>
+                        </label>
+                        <label class="template-option">
+                            <input type="radio" name="project-template" value="markdown">
+                            <div class="option-card">
+                                <i class="fa-regular fa-file-markdown font-lg markdown-color"></i>
+                                <span class="option-title">Documento Markdown</span>
+                                <span class="option-desc">Notas estructuradas con renderizado visual.</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-project-btn" class="action-btn">Cancelar</button>
+                <button id="confirm-project-btn" class="action-btn run-btn">Crear Proyecto</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Custom Logic -->
     <script src="gemini.js"></script>

@@ -110,7 +110,9 @@ Abre \`suma.py\` y pulsa el botón **Ejecutar** arriba a la derecha. Verás una 
 };
 
 // State Variables
-let projectFiles = {};
+let projects = {};
+let activeProjectName = '';
+let projectFiles = {}; // Referencia a projects[activeProjectName].files
 let activeFile = '';
 let openTabs = [];
 let editor = null;
@@ -135,6 +137,140 @@ const reloadPreviewBtn = document.getElementById('reload-preview-btn');
 const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
 const sidebarEl = document.getElementById('sidebar');
 
+// Project Modal and Selector Elements
+const projectSelector = document.getElementById('project-selector');
+const newProjectBtn = document.getElementById('new-project-btn');
+const newProjectModal = document.getElementById('new-project-modal');
+const closeProjectModal = document.getElementById('close-project-modal');
+const cancelProjectBtn = document.getElementById('cancel-project-btn');
+const confirmProjectBtn = document.getElementById('confirm-project-btn');
+const projectNameInput = document.getElementById('project-name-input');
+
+// Template Definitions
+const TEMPLATES = {
+    web: {
+        "index.html": `<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Proyecto Web</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="card">
+        <h1>¡Desarrollo Web en AndroCode! ⚡</h1>
+        <p>Este es un servidor de pruebas local ejecutándose en tu celular.</p>
+        <button id="magic-btn">Presiona aquí</button>
+        <p id="msg" class="hidden font-mono">¡JavaScript conectado! 🎉</p>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>`,
+        "style.css": `body {
+    background: linear-gradient(135deg, #0f172a, #1e1b4b);
+    color: #f8fafc;
+    font-family: system-ui, -apple-system, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 90vh;
+    margin: 0;
+}
+.card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 30px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    max-width: 320px;
+}
+h1 {
+    color: #38bdf8;
+    font-size: 1.6rem;
+    margin-top: 0;
+}
+button {
+    background: #a855f7;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.2s;
+}
+button:active {
+    transform: scale(0.95);
+}
+.font-mono {
+    font-family: monospace;
+    color: #4ade80;
+    margin-top: 15px;
+}
+.hidden {
+    display: none;
+}`,
+        "script.js": `// Comportamiento dinámico
+document.getElementById('magic-btn').addEventListener('click', () => {
+    const msg = document.getElementById('msg');
+    msg.classList.toggle('hidden');
+});`,
+        "README.md": `# Proyecto Web 🚀
+
+Este proyecto contiene una estructura clásica de desarrollo web:
+- \`index.html\`: Estructura del sitio.
+- \`style.css\`: Estilos visuales.
+- \`script.js\`: Comportamiento.
+
+Presiona el botón **Ejecutar** para ver la vista previa en vivo.`
+    },
+    python: {
+        "main.py": `# Script de Python en AndroCode
+def saludar(nombre):
+    print(f"¡Hola, {nombre}! Bienvenido a AndroCode Python.")
+
+def calcular_suma(a, b):
+    return a + b
+
+saludar("Programador Android")
+num1 = 12
+num2 = 23
+resultado = calcular_suma(num1, num2)
+print(f"La suma de {num1} + {num2} es: {resultado}")
+`,
+        "README.md": `# Proyecto Python 🐍
+
+Este es un entorno virtual para correr Python:
+- Edita tu código en \`main.py\`.
+- Presiona **Ejecutar** para simular la consola de comandos interactiva.`
+    },
+    markdown: {
+        "notas.md": `# Mis Notas en AndroCode 📝
+
+Aquí puedes escribir apuntes utilizando formato **Markdown**.
+
+## Tareas Pendientes:
+- [x] Crear este proyecto Markdown.
+- [ ] Aprender sintaxis.
+- [ ] Preguntar dudas al Asistente IA.
+
+### Bloque de Código de Ejemplo:
+\`\`\`html
+<h1>Hola Mundo</h1>
+\`\`\`
+`,
+        "README.md": `# Proyecto Markdown 📄
+
+Soporte nativo para formato de texto Markdown:
+- Edita tu archivo \`notas.md\`.
+- Haz clic en **Ejecutar** o ve a la pestaña **Vista Previa** para ver el renderizado HTML.`
+    }
+};
+
 // Initialize IDE
 window.addEventListener('DOMContentLoaded', () => {
     initFilesystem();
@@ -154,39 +290,163 @@ window.addEventListener('DOMContentLoaded', () => {
     runBtn.addEventListener('click', runProject);
     reloadPreviewBtn.addEventListener('click', runProject);
     exportBtn.addEventListener('click', exportProjectAsZip);
-    resetBtn.addEventListener('click', restoreDefaultProject);
+    resetBtn.addEventListener('click', deleteCurrentProject);
     newFileBtn.addEventListener('click', createNewFilePrompt);
     toggleSidebarBtn.addEventListener('click', () => {
         sidebarEl.classList.toggle('collapsed');
         sidebarEl.classList.toggle('open');
     });
 
-    // Cargar archivo por defecto
-    const initialFile = projectFiles['readme.md'] ? 'readme.md' : Object.keys(projectFiles)[0];
-    if (initialFile) {
-        openFile(initialFile);
-    }
+    // Project Selection and Modal Listeners
+    projectSelector.addEventListener('change', (e) => {
+        switchProject(e.target.value);
+    });
+    newProjectBtn.addEventListener('click', showNewProjectModal);
+    closeProjectModal.addEventListener('click', hideNewProjectModal);
+    cancelProjectBtn.addEventListener('click', hideNewProjectModal);
+    confirmProjectBtn.addEventListener('click', createNewProject);
+
+    // Cargar proyecto inicial
+    loadActiveProject();
 });
 
 // 1. Filesystem Logic
 function initFilesystem() {
-    const saved = localStorage.getItem('androcode_project');
-    if (saved) {
+    const savedProjects = localStorage.getItem('androcode_multi_projects');
+    const savedActive = localStorage.getItem('androcode_active_project');
+    
+    if (savedProjects && savedActive) {
         try {
-            projectFiles = JSON.parse(saved);
+            projects = JSON.parse(savedProjects);
+            activeProjectName = savedActive;
         } catch(e) {
-            projectFiles = { ...DEFAULT_PROJECT };
+            setupDefaultWorkspace();
         }
     } else {
-        projectFiles = { ...DEFAULT_PROJECT };
-        saveToLocalStorage();
+        setupDefaultWorkspace();
+    }
+    updateProjectSelectorDropdown();
+}
+
+function setupDefaultWorkspace() {
+    projects = {
+        "Mi Primer Proyecto": {
+            template: "web",
+            files: { ...TEMPLATES.web }
+        }
+    };
+    activeProjectName = "Mi Primer Proyecto";
+    saveToLocalStorage();
+}
+
+function saveToLocalStorage() {
+    localStorage.setItem('androcode_multi_projects', JSON.stringify(projects));
+    localStorage.setItem('androcode_active_project', activeProjectName);
+}
+
+function updateProjectSelectorDropdown() {
+    projectSelector.innerHTML = '';
+    Object.keys(projects).forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        if (name === activeProjectName) {
+            option.selected = true;
+        }
+        projectSelector.appendChild(option);
+    });
+}
+
+function loadActiveProject() {
+    projectFiles = projects[activeProjectName].files;
+    
+    // Seleccionar el archivo inicial del proyecto
+    const defaultFiles = ['README.md', 'index.html', 'main.py', 'notas.md'];
+    let fileToOpen = '';
+    for (let f of defaultFiles) {
+        if (projectFiles[f]) {
+            fileToOpen = f;
+            break;
+        }
+    }
+    if (!fileToOpen) {
+        fileToOpen = Object.keys(projectFiles)[0];
+    }
+    
+    openTabs = [];
+    if (fileToOpen) {
+        openFile(fileToOpen);
+    } else {
+        activeFile = '';
+        if (editor) editor.setValue('');
+        renderTabs();
     }
     renderFileTree();
 }
 
-function saveToLocalStorage() {
-    localStorage.setItem('androcode_project', JSON.stringify(projectFiles));
+function switchProject(projectName) {
+    if (activeFile && editor) {
+        projectFiles[activeFile] = editor.getValue();
+    }
+    saveToLocalStorage();
+    activeProjectName = projectName;
+    loadActiveProject();
 }
+
+// Modal Controllers
+function showNewProjectModal() {
+    projectNameInput.value = '';
+    newProjectModal.classList.remove('hidden');
+    projectNameInput.focus();
+}
+
+function hideNewProjectModal() {
+    newProjectModal.classList.add('hidden');
+}
+
+function createNewProject() {
+    const name = projectNameInput.value.trim();
+    if (!name) {
+        alert("Por favor, introduce un nombre para el proyecto.");
+        return;
+    }
+    if (projects[name]) {
+        alert("Ya existe un proyecto con ese nombre.");
+        return;
+    }
+
+    const templateRadio = document.querySelector('input[name="project-template"]:checked');
+    const templateVal = templateRadio ? templateRadio.value : 'web';
+
+    // Crear archivos basados en la plantilla
+    projects[name] = {
+        template: templateVal,
+        files: { ...TEMPLATES[templateVal] }
+    };
+    
+    activeProjectName = name;
+    saveToLocalStorage();
+    
+    updateProjectSelectorDropdown();
+    loadActiveProject();
+    hideNewProjectModal();
+}
+
+function deleteCurrentProject() {
+    if (Object.keys(projects).length <= 1) {
+        alert("No puedes eliminar el único proyecto activo. Crea otro primero.");
+        return;
+    }
+    
+    if (confirm(`¿Estás seguro de que deseas eliminar el proyecto "${activeProjectName}"? Se perderán todos sus archivos.`)) {
+        delete projects[activeProjectName];
+        activeProjectName = Object.keys(projects)[0];
+        saveToLocalStorage();
+        updateProjectSelectorDropdown();
+        loadActiveProject();
+    }
+}
+
 
 function renderFileTree() {
     fileTreeEl.innerHTML = '';
