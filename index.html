@@ -163,15 +163,30 @@
                                 <button id="ai-settings-btn" class="icon-btn-sm" title="Ajustes de API Key" style="padding: 2px 6px;">
                                     <i class="fa-solid fa-key"></i>
                                 </button>
-                                <span class="ai-model-badge">Gemini Flash</span>
+                                <span class="ai-model-badge" id="ai-provider-badge">IA Multi-Provider</span>
                             </div>
                         </div>
                         <div class="ai-container">
                             <!-- AI API Key Settings Form -->
                             <div id="ai-settings-form" class="ai-settings-form hidden">
-                                <label for="user-api-key">Tu Gemini API Key (Opcional)</label>
-                                <input type="password" id="user-api-key" placeholder="Pega tu clave AIzaSy..." autocomplete="off">
-                                <small>Si tus claves fallan, puedes crear una gratis en Google AI Studio e introducirla aquí.</small>
+                                <label>Proveedor de IA Preferido</label>
+                                <div class="provider-pills">
+                                    <button class="provider-pill active" data-provider="auto">
+                                        <i class="fa-solid fa-shuffle"></i> Auto
+                                    </button>
+                                    <button class="provider-pill" data-provider="gemini">
+                                        <i class="fa-brands fa-google"></i> Gemini
+                                    </button>
+                                    <button class="provider-pill" data-provider="groq">
+                                        <i class="fa-solid fa-bolt"></i> Groq
+                                    </button>
+                                    <button class="provider-pill" data-provider="mistral">
+                                        <i class="fa-solid fa-wind"></i> Mistral
+                                    </button>
+                                </div>
+                                <label for="user-api-key">API Key Personalizada (Opcional)</label>
+                                <input type="password" id="user-api-key" placeholder="AIzaSy..., gsk_..., o clave Mistral..." autocomplete="off">
+                                <small>Funciona con claves de Gemini (AIzaSy...), Groq (gsk_...) o Mistral. Tienes <strong>18 claves integradas</strong> de respaldo automático.</small>
                             </div>
 
                             <!-- Chat Input (Ahora arriba para evitar el teclado móvil) -->

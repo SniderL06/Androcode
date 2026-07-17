@@ -310,12 +310,27 @@ window.addEventListener('DOMContentLoaded', () => {
     const aiSettingsBtn = document.getElementById('ai-settings-btn');
     const aiSettingsForm = document.getElementById('ai-settings-form');
     const userApiKeyInput = document.getElementById('user-api-key');
+    const aiProviderBadge = document.getElementById('ai-provider-badge');
 
     // Cargar clave de API guardada
     const savedApiKey = localStorage.getItem('androcode_user_api_key');
-    if (savedApiKey) {
-        userApiKeyInput.value = savedApiKey;
-    }
+    if (savedApiKey) userApiKeyInput.value = savedApiKey;
+
+    // Cargar proveedor preferido guardado
+    const savedProvider = localStorage.getItem('androcode_preferred_provider') || 'auto';
+    updateProviderBadge(savedProvider, aiProviderBadge);
+
+    // Activar el pill del proveedor guardado
+    document.querySelectorAll('.provider-pill').forEach(pill => {
+        pill.classList.toggle('active', pill.getAttribute('data-provider') === savedProvider);
+        pill.addEventListener('click', () => {
+            document.querySelectorAll('.provider-pill').forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            const selectedProvider = pill.getAttribute('data-provider');
+            localStorage.setItem('androcode_preferred_provider', selectedProvider);
+            updateProviderBadge(selectedProvider, aiProviderBadge);
+        });
+    });
 
     aiSettingsBtn.addEventListener('click', () => {
         aiSettingsForm.classList.toggle('hidden');
@@ -329,6 +344,21 @@ window.addEventListener('DOMContentLoaded', () => {
     // Cargar proyecto inicial
     loadActiveProject();
 });
+
+function updateProviderBadge(provider, badgeEl) {
+    if (!badgeEl) return;
+    const labels = {
+        auto:    { text: '⚡ Auto (18 Claves)', color: '#00E5FF' },
+        gemini:  { text: '🔵 Gemini',           color: '#4285f4' },
+        groq:    { text: '🟢 Groq',              color: '#50FA7B' },
+        mistral: { text: '🟣 Mistral',           color: '#BD93F9' }
+    };
+    const info = labels[provider] || labels.auto;
+    badgeEl.textContent = info.text;
+    badgeEl.style.color = info.color;
+    badgeEl.style.borderColor = info.color;
+    badgeEl.style.background = `${info.color}18`;
+}
 
 // 1. Filesystem Logic
 function initFilesystem() {
