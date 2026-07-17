@@ -882,23 +882,29 @@ body {
     border-color: var(--accent-green);
 }
 
-/* Sidebar Footer Buttons (ZIP & Delete) */
+/* Sidebar Action Buttons Group */
+.project-action-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    width: 100%;
+}
+
 .sidebar-action-btn {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     color: var(--text-main);
-    padding: 10px;
+    padding: 8px 6px;
     border-radius: var(--radius-md);
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     transition: var(--transition-fast);
-    width: 100%;
-    margin-bottom: 8px;
+    flex: 1;
 }
 
 .sidebar-action-btn:hover {
