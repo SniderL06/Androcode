@@ -278,6 +278,9 @@ window.addEventListener('DOMContentLoaded', () => {
     initMobileNav();
     initKeyboardBar();
     initSuggestions();
+
+    // Precargar Pyodide en segundo plano para que Python esté listo rápidamente
+    setTimeout(() => { loadPyodideEngine().catch(() => {}); }, 2000);
     
     // Bind Event Listeners
     sendChatBtn.addEventListener('click', handleChatSubmit);
@@ -830,75 +833,153 @@ function runProject() {
     }
 }
 
-// Simulated Python Console Execution using AI for complex logic or standard simulation for prints
-async function runPythonConsole(code) {
-    terminalBodyEl.innerHTML = '<div class="terminal-line system-line">> Inicializando entorno Python virtual...</div>';
-    
-    // Intenta un parseo local rápido para prints simples
-    const lines = code.split('\n');
-    let hasComplexLogic = false;
-    let simpleOutputs = [];
-    
-    for (let line of lines) {
-        line = line.trim();
-        if (line.startsWith('print(') && line.endsWith(')')) {
-            const content = line.substring(6, line.length - 1).trim();
-            // Si es un print de string simple
-            if ((content.startsWith('"') && content.endsWith('"')) || (content.startsWith("'") && content.endsWith("'"))) {
-                simpleOutputs.push(content.substring(1, content.length - 1));
-            } else {
-                hasComplexLogic = true;
-            }
-        } else if (line !== '' && !line.startsWith('#')) {
-            hasComplexLogic = true;
-        }
+// ========================================================
+// PYODIDE: Motor de Python real en el navegador (WebAssembly)
+// ========================================================
+let pyodideInstance = null;
+let pyodideLoading = false;
+let pyodideReady = false;
+
+// Resolvers para input() interactivo
+let inputResolve = null;
+
+async function loadPyodideEngine() {
+    if (pyodideReady) return pyodideInstance;
+    if (pyodideLoading) {
+        // Esperar hasta que esté listo
+        return new Promise(resolve => {
+            const check = setInterval(() => {
+                if (pyodideReady) { clearInterval(check); resolve(pyodideInstance); }
+            }, 200);
+        });
     }
 
-    if (!hasComplexLogic && simpleOutputs.length > 0) {
-        terminalBodyEl.innerHTML += '<div class="terminal-line system-line">> Ejecución completada localmente:</div>';
-        simpleOutputs.forEach(out => {
-            terminalBodyEl.innerHTML += `<div class="terminal-line">${out}</div>`;
-        });
+    pyodideLoading = true;
+    const badge = document.getElementById('pyodide-status');
+    if (badge) { badge.textContent = 'Cargando Python...'; badge.className = 'pyodide-badge loading'; }
+
+    try {
+        pyodideInstance = await loadPyodide();
+
+        // Interceptar stdout y stderr de Python para mostrarlos en la terminal
+        pyodideInstance.setStdout({ batched: (text) => terminalPrint(text, '') });
+        pyodideInstance.setStderr({ batched: (text) => terminalPrint(text, 'error-line') });
+
+        pyodideReady = true;
+        pyodideLoading = false;
+        if (badge) { badge.textContent = '✓ Python 3 Listo'; badge.className = 'pyodide-badge ready'; }
+        return pyodideInstance;
+
+    } catch (err) {
+        pyodideLoading = false;
+        if (badge) { badge.textContent = '✗ Error al cargar'; badge.className = 'pyodide-badge error'; }
+        throw err;
+    }
+}
+
+// Función para imprimir en la terminal
+function terminalPrint(text, cssClass = '') {
+    if (!terminalBodyEl) return;
+    const lines = String(text).split('\n');
+    lines.forEach(line => {
+        const div = document.createElement('div');
+        div.className = `terminal-line ${cssClass}`;
+        div.textContent = line;
+        terminalBodyEl.appendChild(div);
+    });
+    terminalBodyEl.scrollTop = terminalBodyEl.scrollHeight;
+}
+
+// Función que la terminal usa para esperar input() del usuario
+function waitForInput(prompt) {
+    return new Promise((resolve) => {
+        const inputRow = document.getElementById('terminal-input-row');
+        const inputField = document.getElementById('terminal-input');
+        const sendBtn = document.getElementById('terminal-send-btn');
+        const promptLabel = document.getElementById('terminal-prompt-label');
+
+        // Mostrar el prompt al usuario
+        if (prompt) terminalPrint(prompt, 'input-line');
+        if (promptLabel) promptLabel.textContent = '>>>';
+        if (inputRow) inputRow.style.display = 'flex';
+        if (inputField) { inputField.value = ''; inputField.focus(); }
+
+        const submitInput = () => {
+            const value = inputField ? inputField.value : '';
+            if (inputRow) inputRow.style.display = 'none';
+            terminalPrint(`>>> ${value}`, 'input-line');
+            resolve(value);
+        };
+
+        if (inputField) {
+            inputField.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); submitInput(); } };
+        }
+        if (sendBtn) sendBtn.onclick = submitInput;
+
+        inputResolve = submitInput;
+    });
+}
+
+// Ejecución Python REAL sin API — 100% local con Pyodide (WebAssembly)
+async function runPythonConsole(code) {
+    terminalBodyEl.innerHTML = '';
+    terminalPrint('> Python 3 local (sin API) — Pyodide WebAssembly', 'system-line');
+
+    const inputRow = document.getElementById('terminal-input-row');
+    if (inputRow) inputRow.style.display = 'none';
+
+    let pyodide;
+    try {
+        pyodide = await loadPyodideEngine();
+    } catch (err) {
+        terminalPrint('> Error: No se pudo cargar Pyodide. Verifica tu conexión a internet.', 'error-line');
         return;
     }
 
-    // Si tiene lógica compleja, le pedimos a Gemini que simule la salida de la consola python. Esto es increíblemente premium!
-    terminalBodyEl.innerHTML += '<div class="terminal-line system-line">> Código complejo detectado. Simulando consola vía Gemini...</div>';
-    
+    terminalPrint('> Ejecutando...', 'system-line');
+
+    // Exponer waitForInput como función callable desde Python
+    // Pyodide permite que Python llame funciones JS que devuelven Promises usando await
+    pyodide.globals.set('_js_input', (prompt) => waitForInput(String(prompt || '')));
+
+    // Reemplazar input() del usuario por una versión async que espera la terminal
+    // Envolvemos el código del usuario en una función async main() para poder usar await
+    // También reemplazamos input(...) → await _js_input(...) con regex seguro
+    const userCodeLines = code.split('\n');
+    const indented = userCodeLines.map(l => '    ' + l).join('\n');
+
+    const wrappedCode = `
+import js as _js
+
+async def input(prompt=""):
+    return await _js._js_input(prompt)
+
+async def _main():
+${indented}
+
+import asyncio
+asyncio.get_event_loop().run_until_complete(_main())
+`;
+
     try {
-        const promptSimulacion = `Actúa como un intérprete interactivo de Python 3.
-Quiero que ejecutes mentalmente el siguiente código y que me devuelvas ÚNICAMENTE la salida de consola (stdout/stderr) exacta que produciría este programa.
-No agregues explicaciones, no agregues formato de código de markdown. Simplemente devuelve la salida de la consola.
-Si hay un error de sintaxis o de ejecución, devuélvelo en el formato estándar de errores de Python.
-
-Código a ejecutar:
-${code}`;
-
-        const output = await askGemini(promptSimulacion, [], '', '');
-        terminalBodyEl.innerHTML += '<div class="terminal-line system-line">> Salida de ejecución:</div>';
-        
-        // Formatear líneas
-        const outLines = output.split('\n');
-        outLines.forEach(l => {
-            if (l.trim()) {
-                const isError = l.toLowerCase().includes('traceback') || l.toLowerCase().includes('error:');
-                terminalBodyEl.innerHTML += `<div class="terminal-line ${isError ? 'error-line' : ''}">${l}</div>`;
-            }
-        });
-
+        await pyodide.runPythonAsync(wrappedCode);
+        terminalPrint('\n> Ejecución completada ✓', 'success-line');
     } catch (err) {
-        terminalBodyEl.innerHTML += `<div class="terminal-line error-line">> Error de simulación (API Keys agotadas).</div>`;
-        terminalBodyEl.innerHTML += `<div class="terminal-line system-line">> Ejecutando respaldo local rápido (solo stdout estático):</div>`;
-        
-        simpleOutputs.forEach(out => {
-            terminalBodyEl.innerHTML += `<div class="terminal-line">${out}</div>`;
-        });
-        
-        if (simpleOutputs.length === 0) {
-            terminalBodyEl.innerHTML += `<div class="terminal-line system-line">> (No se detectaron comandos de impresión 'print("texto")' simples. Configura tu propia API Key en el panel del asistente para ejecutar lógica compleja).</div>`;
-        }
+        const raw = String(err);
+        // Limpiar trazas internas de Pyodide para mostrar errores limpios
+        const clean = raw
+            .replace(/PythonError: /g, '')
+            .replace(/File "<exec>",?\s?/g, '')
+            .replace(/File "<string>",?\s?/g, '');
+        terminalPrint('', '');
+        terminalPrint(clean, 'error-line');
+    } finally {
+        if (inputRow) inputRow.style.display = 'none';
     }
 }
+
+
+
 
 // 6. Gemini Chat Assistant Integration
 async function handleChatSubmit() {

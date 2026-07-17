@@ -18,6 +18,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/material-ocean.min.css">
     
     <link rel="stylesheet" href="style.css">
+    <!-- Pyodide: Python real en el navegador -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.27.4/full/pyodide.js"></script>
 </head>
 <body class="dark-theme">
     <div class="app-container">
@@ -142,13 +144,22 @@
                                 <!-- Iframe para Web Apps -->
                                 <iframe id="web-preview" title="Web Preview"></iframe>
                                 
-                                <!-- Consola/Terminal Simulada para Python/Otros -->
+                                <!-- Terminal Interactiva Python (Pyodide) -->
                                 <div id="terminal-preview" class="terminal-view hidden">
                                     <div class="terminal-header">
-                                        <span>androcode_terminal@system</span>
+                                        <span><i class="fa-brands fa-python" style="color:#50FA7B;"></i> Python 3 &mdash; Pyodide WebAssembly</span>
+                                        <span id="pyodide-status" class="pyodide-badge loading">Cargando...</span>
                                     </div>
                                     <div class="terminal-body" id="terminal-body">
-                                        <div class="terminal-line system-line">> Esperando ejecución...</div>
+                                        <div class="terminal-line system-line">> Iniciando entorno Python real (Pyodide)...</div>
+                                    </div>
+                                    <!-- Fila de input interactivo -->
+                                    <div class="terminal-input-row" id="terminal-input-row" style="display:none;">
+                                        <span class="terminal-prompt" id="terminal-prompt-label">&gt;&gt;&gt;</span>
+                                        <input type="text" id="terminal-input" class="terminal-input-field" placeholder="Escribe tu respuesta y pulsa Enter..." autocomplete="off" autocorrect="off" spellcheck="false">
+                                        <button id="terminal-send-btn" class="icon-btn primary" title="Enviar">
+                                            <i class="fa-solid fa-arrow-right"></i>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
