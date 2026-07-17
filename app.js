@@ -306,6 +306,26 @@ window.addEventListener('DOMContentLoaded', () => {
     cancelProjectBtn.addEventListener('click', hideNewProjectModal);
     confirmProjectBtn.addEventListener('click', createNewProject);
 
+    // AI Settings Listeners
+    const aiSettingsBtn = document.getElementById('ai-settings-btn');
+    const aiSettingsForm = document.getElementById('ai-settings-form');
+    const userApiKeyInput = document.getElementById('user-api-key');
+
+    // Cargar clave de API guardada
+    const savedApiKey = localStorage.getItem('androcode_user_api_key');
+    if (savedApiKey) {
+        userApiKeyInput.value = savedApiKey;
+    }
+
+    aiSettingsBtn.addEventListener('click', () => {
+        aiSettingsForm.classList.toggle('hidden');
+    });
+
+    userApiKeyInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        localStorage.setItem('androcode_user_api_key', val);
+    });
+
     // Cargar proyecto inicial
     loadActiveProject();
 });
@@ -515,6 +535,11 @@ function openFile(filename) {
     else if (ext === 'py') mode = 'python';
     else if (ext === 'md') mode = 'markdown';
     editor.setOption('mode', mode);
+
+    // Forzar redibujado de CodeMirror en móvil
+    setTimeout(() => {
+        editor.refresh();
+    }, 50);
 
     renderFileTree();
 }
@@ -832,7 +857,16 @@ ${code}`;
         });
 
     } catch (err) {
-        terminalBodyEl.innerHTML += `<div class="terminal-line error-line">> Error de simulación: ${err.message}</div>`;
+        terminalBodyEl.innerHTML += `<div class="terminal-line error-line">> Error de simulación (API Keys agotadas).</div>`;
+        terminalBodyEl.innerHTML += `<div class="terminal-line system-line">> Ejecutando respaldo local rápido (solo stdout estático):</div>`;
+        
+        simpleOutputs.forEach(out => {
+            terminalBodyEl.innerHTML += `<div class="terminal-line">${out}</div>`;
+        });
+        
+        if (simpleOutputs.length === 0) {
+            terminalBodyEl.innerHTML += `<div class="terminal-line system-line">> (No se detectaron comandos de impresión 'print("texto")' simples. Configura tu propia API Key en el panel del asistente para ejecutar lógica compleja).</div>`;
+        }
     }
 }
 

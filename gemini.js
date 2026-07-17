@@ -42,13 +42,22 @@ ${activeCode ? `El archivo actual que el usuario está editando se llama "${file
         parts: [{ text: prompt }]
     });
 
-    // Intentar realizar la petición rotando llaves si falla
-    for (let attempts = 0; attempts < GEMINI_KEYS.length; attempts++) {
-        const key = GEMINI_KEYS[currentKeyIndex];
+    // Obtener la clave personalizada si existe
+    const userKey = localStorage.getItem('androcode_user_api_key');
+    const keysToTry = [];
+    if (userKey && userKey.trim().startsWith('AIzaSy')) {
+        keysToTry.push(userKey.trim());
+    }
+    // Añadir las claves públicas rotativas
+    keysToTry.push(...GEMINI_KEYS);
+
+    // Intentar realizar la petición recorriendo las llaves disponibles
+    for (let attempts = 0; attempts < keysToTry.length; attempts++) {
+        const key = keysToTry[attempts];
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
         
         try {
-            console.log(`Intentando llamar a Gemini con la clave index: ${currentKeyIndex}`);
+            console.log(`Intentando llamar a Gemini (Intento ${attempts + 1}/${keysToTry.length})`);
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -77,16 +86,15 @@ ${activeCode ? `El archivo actual que el usuario está editando se llama "${file
                 throw new Error("Respuesta vacía o formato inválido de la API");
             }
 
+            // Si es un API Key de usuario exitoso, lo recordamos
             return textResponse;
 
         } catch (error) {
-            console.warn(`Error con la clave de Gemini index ${currentKeyIndex}:`, error.message);
-            // Rotar a la siguiente clave
-            currentKeyIndex = (currentKeyIndex + 1) % GEMINI_KEYS.length;
+            console.warn(`Intento ${attempts + 1} fallido:`, error.message);
             
-            // Si hemos probado todas las claves, lanzar error final
-            if (attempts === GEMINI_KEYS.length - 1) {
-                throw new Error("Todas las claves de la API de Gemini fallaron o están agotadas. Por favor, revisa tu conexión o las claves.");
+            // Si hemos probado todas las claves, lanzar error final descriptivo
+            if (attempts === keysToTry.length - 1) {
+                throw new Error("Todas las claves de la API de Gemini fallaron o están agotadas. Puedes introducir tu propia clave en el icono de llave en el panel del asistente.");
             }
         }
     }

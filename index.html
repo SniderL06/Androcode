@@ -159,9 +159,21 @@
                     <section class="panel-section" id="ai-panel">
                         <div class="panel-header">
                             <h3><i class="fa-solid fa-brain neon-purple-text"></i> Asistente de Código</h3>
-                            <span class="ai-model-badge">Gemini Flash</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button id="ai-settings-btn" class="icon-btn-sm" title="Ajustes de API Key" style="padding: 2px 6px;">
+                                    <i class="fa-solid fa-key"></i>
+                                </button>
+                                <span class="ai-model-badge">Gemini Flash</span>
+                            </div>
                         </div>
                         <div class="ai-container">
+                            <!-- AI API Key Settings Form -->
+                            <div id="ai-settings-form" class="ai-settings-form hidden">
+                                <label for="user-api-key">Tu Gemini API Key (Opcional)</label>
+                                <input type="password" id="user-api-key" placeholder="Pega tu clave AIzaSy..." autocomplete="off">
+                                <small>Si tus claves fallan, puedes crear una gratis en Google AI Studio e introducirla aquí.</small>
+                            </div>
+
                             <!-- Chat Input (Ahora arriba para evitar el teclado móvil) -->
                             <div class="chat-input-wrapper">
                                 <textarea id="chat-input" placeholder="Pregúntale al asistente... (Ej: ¿Cómo centro un div?)"></textarea>
