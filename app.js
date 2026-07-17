@@ -682,51 +682,10 @@ function runProject() {
         if (previewTabNav) previewTabNav.click();
     }
 
-    if (ext === 'html' || ext === 'css' || ext === 'js' || projectFiles['index.html']) {
-        // Ejecución Web (Iframe)
-        webPreviewEl.classList.remove('hidden');
-        terminalPreviewEl.classList.add('hidden');
-        
-        let htmlContent = projectFiles['index.html'] || `
-            <!DOCTYPE html>
-            <html>
-            <head><title>AndroCode Preview</title></head>
-            <body>
-                <h3>Vista Previa</h3>
-                <p>Crea un archivo <strong>index.html</strong> para previsualizar tu diseño web.</p>
-            </body>
-            </html>
-        `;
-
-        // Inyectar el CSS del proyecto dentro de la página
-        if (projectFiles['style.css']) {
-            const cssTag = `<style>${projectFiles['style.css']}</style>`;
-            if (htmlContent.includes('</head>')) {
-                htmlContent = htmlContent.replace('</head>', `${cssTag}</head>`);
-            } else {
-                htmlContent = cssTag + htmlContent;
-            }
-        }
-
-        // Inyectar el script del proyecto dentro de la página
-        if (projectFiles['script.js']) {
-            const jsTag = `<script>${projectFiles['script.js']}</script>`;
-            if (htmlContent.includes('</body>')) {
-                htmlContent = htmlContent.replace('</body>', `${jsTag}</body>`);
-            } else {
-                htmlContent = htmlContent + jsTag;
-            }
-        }
-
-        // Cargar en el iframe
-        const blob = new Blob([htmlContent], { type: 'text/html' });
-        webPreviewEl.src = URL.createObjectURL(blob);
-
-    } else if (ext === 'py') {
+    if (ext === 'py') {
         // Ejecución Python (Consola Simulada con Gemini/Ejecutor)
         webPreviewEl.classList.add('hidden');
         terminalPreviewEl.classList.remove('hidden');
-        
         runPythonConsole(projectFiles[activeFile]);
 
     } else if (ext === 'md') {
@@ -750,6 +709,67 @@ function runProject() {
         `;
         const blob = new Blob([mdHtml], { type: 'text/html' });
         webPreviewEl.src = URL.createObjectURL(blob);
+
+    } else if (ext === 'html' || ext === 'css' || ext === 'js' || projectFiles['index.html']) {
+        // Ejecución Web (Iframe)
+        webPreviewEl.classList.remove('hidden');
+        terminalPreviewEl.classList.add('hidden');
+        
+        let htmlContent = projectFiles['index.html'] || `
+            <!DOCTYPE html>
+            <html>
+            <head><title>AndroCode Preview</title></head>
+            <body>
+                <h3>Vista Previa</h3>
+                <p>Crea un archivo <strong>index.html</strong> para previsualizar tu diseño web.</p>
+            </body>
+            </html>
+        `;
+
+        // 1. Reemplazar de forma inteligente referencias a archivos CSS locales
+        // Regex para buscar: <link rel="stylesheet" href="cualquier_cosa.css">
+        const linkRegex = /<link\s+[^>]*href=["']([^"']+\.css)["'][^>]*>/gi;
+        htmlContent = htmlContent.replace(linkRegex, (match, cssFileName) => {
+            // Quitar posibles subcarpetas relativas "./style.css" -> "style.css"
+            const cleanCssName = cssFileName.split('/').pop();
+            const cssContent = projectFiles[cleanCssName];
+            if (cssContent !== undefined) {
+                return `<style>${cssContent}</style>`;
+            }
+            return match; // Si no existe en el proyecto virtual, no alterarlo (puede ser una URL CDN)
+        });
+
+        // 2. Reemplazar de forma inteligente referencias a scripts JS locales
+        // Regex para buscar: <script src="cualquier_cosa.js"></script>
+        const scriptRegex = /<script\s+[^>]*src=["']([^"']+\.js)["'][^>]*>\s*<\/script>/gi;
+        htmlContent = htmlContent.replace(scriptRegex, (match, jsFileName) => {
+            const cleanJsName = jsFileName.split('/').pop();
+            const jsContent = projectFiles[cleanJsName];
+            if (jsContent !== undefined) {
+                return `<script>${jsContent}</script>`;
+            }
+            return match; // Si no existe localmente, dejar la llamada externa intacta
+        });
+
+        // Caso de respaldo: Si el HTML no tiene enlazado style.css o script.js pero existen en el proyecto,
+        // inyectarlos de forma forzada para simplificar proyectos de principiantes.
+        if (!htmlContent.match(/<style>/i) && projectFiles['style.css']) {
+            const defaultCss = `<style>${projectFiles['style.css']}</style>`;
+            htmlContent = htmlContent.includes('</head>') 
+                ? htmlContent.replace('</head>', `${defaultCss}</head>`) 
+                : defaultCss + htmlContent;
+        }
+        if (!htmlContent.match(/<script/i) && projectFiles['script.js']) {
+            const defaultJs = `<script>${projectFiles['script.js']}</script>`;
+            htmlContent = htmlContent.includes('</body>') 
+                ? htmlContent.replace('</body>', `${defaultJs}</body>`) 
+                : htmlContent + defaultJs;
+        }
+
+        // Cargar en el iframe
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        webPreviewEl.src = URL.createObjectURL(blob);
+
     } else {
         alert("Abre un archivo HTML, CSS, JS, Python o Markdown para ejecutar.");
     }
